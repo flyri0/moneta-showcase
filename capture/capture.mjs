@@ -90,7 +90,7 @@ async function desktop() {
 	const rta = page.getByTestId('rta-card');
 	const vacRow = page.getByTestId('category-row').filter({ hasText: 'Vacation' });
 	const reports = page.getByRole('link', { name: 'Reports' }).first();
-	const base = { add, rta, rtaAmount: page.getByTestId('rta-amount'), vacAssigned: vacRow.getByTestId('assigned'), vacAvail: vacRow.getByTestId('available'), vacRow, reports, settings: page.getByRole('link', { name: 'Settings' }).first() };
+	const base = { add, rta, rtaAmount: page.getByTestId('rta-amount'), rtaHint: page.getByTestId('rta-hint'), sep: page.getByRole('separator', { name: 'Resize sidebar' }), vacAssigned: vacRow.getByTestId('assigned'), vacAvail: vacRow.getByTestId('available'), vacRow, reports, settings: page.getByRole('link', { name: 'Settings' }).first() };
 	await shot(page, 'd01-base', base);
 
 	await hover(page, add);
@@ -250,6 +250,47 @@ async function responsive() {
 	const H = 900;
 	const { ctx, page } = await open({ width: 1440, height: H, dpr: 2 });
 	await collapseTop(page);
+	// The same budget the story left: the income added and assigned to Vacation.
+	await page.getByRole('button', { name: 'Transaction', exact: true }).click();
+	const dialog = page.getByRole('dialog');
+	await dialog.getByLabel('Payee').click();
+	await popover(page).locator('[data-slot="command-input"]').fill('Free');
+	await popover(page).locator('[data-slot="command-item"]').filter({ hasText: 'Freelance' }).first().click();
+	await dialog.getByRole('button', { name: 'Inflow' }).click();
+	await dialog.getByLabel('Amount', { exact: true }).fill('850');
+	await dialog.getByLabel('Category').click();
+	await popover(page).locator('[data-slot="command-input"]').fill('Other');
+	await popover(page).locator('[data-slot="command-item"]').filter({ hasText: 'Other Income' }).first().click();
+	await dialog.getByRole('button', { name: 'Save' }).click();
+	await dialog.waitFor({ state: 'hidden' });
+	await page.getByTestId('category-row').filter({ hasText: 'Vacation' }).getByTestId('assigned').click();
+	await page.keyboard.press('End');
+	await page.keyboard.type('+850');
+	await page.keyboard.press('Enter');
+	await page.evaluate(() => window.scrollTo(0, 0));
+	await page.mouse.move(700, 880);
+	await page.waitForTimeout(700);
+
+	// Drag the sidebar's edge down to the icon rail.
+	const sep = page.getByRole('separator', { name: 'Resize sidebar' });
+	await shot(page, 'sb-start', { sep }, { settle: 300 });
+	const s0 = await box(sep);
+	await page.mouse.move(s0.x + s0.w / 2, 450, { steps: 3 });
+	await shot(page, 'sb-hover', { sep }, { settle: 200 });
+	await page.mouse.down();
+	const drags = [];
+	for (const x of [248, 238, 228, 218, 208, 180, 150]) {
+		await page.mouse.move(x, 450, { steps: 2 });
+		await shot(page, `sb-${x}`, {}, { settle: 120 });
+		drags.push(x);
+	}
+	await page.mouse.move(120, 450, { steps: 2 });
+	await shot(page, 'sb-rail-drag', { sep }, { settle: 250 });
+	await page.mouse.up();
+	await page.mouse.move(700, 880);
+	await shot(page, 'sb-rail', { sep }, { settle: 400 });
+	meta.sidebar = { drags, handle: s0 };
+
 	const widths = [];
 	for (let w = 1440; w > 390; w -= 30) widths.push(w);
 	widths.push(390);
@@ -268,7 +309,7 @@ async function phone() {
 	await collapseTop(page);
 	const fab = page.getByRole('button', { name: 'Transaction', exact: true });
 	const vacName = page.getByRole('button', { name: 'Vacation', exact: true });
-	const base = { fab, rta: page.getByTestId('rta-card'), vacName, vacRow: page.getByTestId('category-row').filter({ hasText: 'Vacation' }), reportsTab: page.getByRole('link', { name: 'Reports' }).first() };
+	const base = { fab, rta: page.getByTestId('rta-card'), rtaAmount: page.getByTestId('rta-amount'), rtaHint: page.getByTestId('rta-hint'), vacName, vacRow: page.getByTestId('category-row').filter({ hasText: 'Vacation' }), reportsTab: page.getByRole('link', { name: 'Reports' }).first() };
 	await shot(page, 'p01-base', base);
 	await fab.tap();
 	const dialog = page.getByRole('dialog');

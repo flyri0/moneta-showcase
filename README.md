@@ -46,18 +46,21 @@ them are 120 bpm, so the cuts stay on the beat).
 
 ## Recapture the app
 
-The captures in `video/public/captures/` come from Moneta at commit `56da45f` with
+The captures in `video/public/captures/` come from Moneta at commit `e076e9c` with
 `app.patch` applied. The patch hides the demo banner and the loading bar, hides scrollbars and
 toasts, and gives the demo's current month round plans with room left (and one overspent
 envelope) so the budget shows colour.
 
 ```sh
 git clone git@github.com:flyri0/moneta.git && cd moneta
-git checkout 56da45f && git apply ../moneta-showcase/app.patch
+git checkout e076e9c && git apply ../moneta-showcase/app.patch
 cp -r ../moneta-showcase/capture ../moneta-showcase/video .   # the scripts expect ../video
 pnpm install && pnpm build
 node capture/capture.mjs                  # or: desktop | accents | responsive | phone
 ```
+
+`responsive` adds the income and assigns it first, so the sidebar drag (`sb-*`) and the resize
+sweep (`rs-*`) show the same budget the story leaves.
 
 The timeline in `video/src/scenes/scripts.ts` aims the cursor and camera with the boxes in
 `meta.json`, so it follows the new captures as long as the same steps exist.

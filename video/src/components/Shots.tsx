@@ -14,6 +14,8 @@ export type Entry = {
 	origin?: [number, number];
 	/** Background colour behind the cards while they assemble. */
 	bg?: string;
+	/** 'scroll': the sticky header ends at `top` and the fixed bottom bar starts at `bottom`. */
+	fixed?: { top: number; bottom: number };
 	/** Parts that stay put while a tall capture scrolls (sidebar, headers, nav), from a viewport capture. */
 	sticky?: { src: string; boxes: (Box & { r?: number })[] };
 };
@@ -140,10 +142,43 @@ export const Shots: React.FC<{
 	if (fx === 'scroll') {
 		const dy = (META[cur.src].scrollY ?? 0) - (META[prev.src].scrollY ?? 0);
 		const q = prog(frame, cur.f, cur.f + dur);
+		const m = META[cur.src];
+		if (!cur.fixed) {
+			return (
+				<>
+					<Pic src={prev.src} style={{ transform: `translateY(${-dy * q}px)`, opacity: 1 - q }} />
+					<Pic src={cur.src} style={{ transform: `translateY(${dy * (1 - q)}px)`, opacity: q }} />
+				</>
+			);
+		}
+		// Both captures are the same page, so their content lines up while it slides: the old one
+		// fills the top of the scroll area, the new one the bottom, and the bars stay put.
+		const { top, bottom } = cur.fixed;
+		// Scrolling down, the new capture's header would show at its top edge; scrolling up, its
+		// bottom bar at the bottom edge. Clip each capture to the part where only content shows.
+		const d = Math.abs(dy);
+		const [prevClip, curClip] =
+			dy >= 0
+				? [
+						[top, m.h - bottom],
+						[top + d * (1 - q), m.h - bottom]
+					]
+				: [
+						[top + d * q, m.h - bottom],
+						[top, m.h - bottom + d * (1 - q)]
+					];
 		return (
 			<>
-				<Pic src={prev.src} style={{ transform: `translateY(${-dy * q}px)`, opacity: 1 - q }} />
-				<Pic src={cur.src} style={{ transform: `translateY(${dy * (1 - q)}px)`, opacity: q }} />
+				<div style={{ position: 'absolute', inset: 0, clipPath: `inset(${prevClip[0]}px 0 ${prevClip[1]}px 0)` }}>
+					<Pic src={prev.src} style={{ transform: `translateY(${-dy * q}px)` }} />
+				</div>
+				<div style={{ position: 'absolute', inset: 0, clipPath: `inset(${curClip[0]}px 0 ${curClip[1]}px 0)` }}>
+					<Pic src={cur.src} style={{ transform: `translateY(${dy * (1 - q)}px)` }} />
+				</div>
+				<Crop src={prev.src} b={{ x: 0, y: 0, w: m.w, h: top }} />
+				<Crop src={prev.src} b={{ x: 0, y: bottom, w: m.w, h: m.h - bottom }} />
+				<Crop src={cur.src} b={{ x: 0, y: 0, w: m.w, h: top }} style={{ opacity: q }} />
+				<Crop src={cur.src} b={{ x: 0, y: bottom, w: m.w, h: m.h - bottom }} style={{ opacity: q }} />
 			</>
 		);
 	}

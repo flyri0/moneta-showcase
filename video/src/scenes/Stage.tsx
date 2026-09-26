@@ -37,7 +37,9 @@ const CAPTIONS = (portrait: boolean) => [
 		start: T.resp,
 		end: T.pers - 14,
 		title: portrait ? 'Phone to desktop' : 'Desktop to phone',
-		body: 'Responsive, installable, and fully offline.'
+		body: portrait
+			? 'Responsive, installable, and fully offline.'
+			: 'A sidebar that folds to icons, a layout that fits any screen, fully offline.'
 	},
 	{ start: T.pers, end: T.priv - 4, title: 'Make it yours', body: 'Ten accent colors, in light and dark.' }
 ];
@@ -62,7 +64,9 @@ export const Stage: React.FC = () => {
 		cw = kf(g, [[D + RS.landscape.shrink[0], 1440], [D + RS.landscape.shrink[1], 390]]);
 	}
 	const ch = 900 + (844 - 900) * m;
-	const inResp = g >= D && g < D + rs.end;
+	// Landscape drags the sidebar with ordinary captures first; the resize sweep takes over after.
+	const respFrom = portrait ? 0 : RS.landscape.shrink[0] - 10;
+	const inResp = g >= D + respFrom && g < D + rs.end;
 	const afterResp = g >= D;
 
 	const fly = prog(g, T.head + 150, T.head + 236, out);
@@ -122,14 +126,7 @@ export const Stage: React.FC = () => {
 			const a = prog(g, D + RS.landscape.swap[0], D + RS.landscape.swap[1]);
 			content = (
 				<>
-					<div style={{ position: 'absolute', inset: 0, opacity: prog(g, D, D + 14) }}>
-						<Pic src={rsSrc} />
-					</div>
-					{g < D + 14 && (
-						<div style={{ position: 'absolute', inset: 0, opacity: 1 - prog(g, D, D + 14) }}>
-							<Pic src="d23-networth" />
-						</div>
-					)}
+					<Pic src={rsSrc} />
 					{a > 0 && (
 						<div style={{ position: 'absolute', inset: 0, opacity: a }}>
 							<Pic src="p11-top" />
@@ -140,33 +137,28 @@ export const Stage: React.FC = () => {
 		}
 	} else {
 		const entries = afterResp
-			? [{ f: D + rs.end, src: portrait ? 'rs-1440' : 'p11-top' }, ...s.entries.filter((e) => e.f >= E)]
+			? [...s.entries, { f: D + rs.end, src: portrait ? 'rs-1440' : 'p11-top' }].sort((a, b) => a.f - b.f)
 			: s.entries;
 		content = <Shots entries={entries} frame={g} scroll={scroll} vh={vh} />;
 	}
 
 	// ---------------------------------------------------------------- overlays in screen space
+	const dragging = !portrait && g >= D + RS.landscape.sidebar[0] - 6 && g < D + RS.landscape.sidebar[1] + 10;
+	const cursor = !portrait && g < D + RS.landscape.sidebar[1] + 40 && (
+		<Cursor frame={g} path={s.path} clicks={s.clicks} opacity={kf(g, s.cursorOn)} resize={dragging} />
+	);
 	const overlays = !afterResp && (
 		<>
 			<Chip s={s} g={g} portrait={portrait} />
 			{s.rtaGlow.map((r, i) => (
-				<Glow key={i} g={g} f={r.f} b={r.b} />
+				<Glow key={i} g={g} f={r.f} b={r.b} color={r.color} />
 			))}
 			<Glow g={g} f={s.availRing.f} b={s.availRing.b} radius={999} len={portrait ? 30 : 70} />
 			{s.notes.map((n, i) => (
 				<Badge key={i} g={g} note={n} portrait={portrait} />
 			))}
 			<ChartWipe g={g} f={s.chart.f} b={s.chart.b} />
-			{portrait ? (
-				<Taps frame={g} taps={s.taps} />
-			) : (
-				<Cursor
-					frame={g}
-					path={s.path}
-					clicks={s.clicks}
-					opacity={kf(g, s.cursorOn)}
-				/>
-			)}
+			{portrait && <Taps frame={g} taps={s.taps} />}
 		</>
 	);
 
@@ -224,6 +216,7 @@ export const Stage: React.FC = () => {
 				>
 					{content}
 					{overlays}
+					{cursor}
 				</div>
 			</Device>
 			</AbsoluteFill>
@@ -309,7 +302,8 @@ const Glow: React.FC<{
 	b: { x: number; y: number; w: number; h: number };
 	radius?: number;
 	len?: number;
-}> = ({ g, f, b, radius = 14, len = 110 }) => {
+	color?: string;
+}> = ({ g, f, b, radius = 14, len = 110, color = C.teal }) => {
 	if (g < f || g > f + len) return null;
 	const q = prog(g, f, f + 12, out);
 	const fade = prog(g, f + len * 0.64, f + len);
@@ -323,8 +317,10 @@ const Glow: React.FC<{
 				width: b.w + 8,
 				height: b.h + 8,
 				borderRadius: radius,
-				border: `2.5px solid ${C.teal}`,
-				boxShadow: `0 0 0 ${6 * q}px rgba(45,212,191,0.18), 0 0 40px rgba(45,212,191,${0.45 * q})`,
+				border: `2.5px solid ${color}`,
+				boxShadow: `0 0 0 ${6 * q}px ${color}2e, 0 0 40px ${color}${Math.round(0x73 * q)
+					.toString(16)
+					.padStart(2, '0')}`,
 				opacity: q * (1 - fade),
 				transform: `scale(${pulse})`,
 				zIndex: 30

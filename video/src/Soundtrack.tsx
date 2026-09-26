@@ -84,6 +84,7 @@ export const Soundtrack: React.FC<{ track: TrackId; offset?: number }> = ({ trac
 			<Sfx at={s.chart.f} src="switch" volume={0.3} />
 			{/* resize */}
 			<Sfx at={D} src="whip" volume={0.35} />
+			{s.snap !== undefined && <Sfx at={s.snap} src="pop" volume={0.35} />}
 			{tiers.map((f) => (
 				<Sfx key={`r${f}`} at={f} src="blip" volume={0.35} rate={1.2} />
 			))}

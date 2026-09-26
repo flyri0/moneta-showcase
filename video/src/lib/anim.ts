@@ -29,6 +29,7 @@ export type Box = { x: number; y: number; w: number; h: number };
 export type ShotMeta = { w: number; h: number; scrollY?: number; boxes: Record<string, Box> };
 export const META = meta as unknown as Record<string, ShotMeta> & {
 	responsive: { widths: number[]; height: number };
+	sidebar: { drags: number[]; handle: Box };
 };
 
 export function box(shot: string, key: string): Box {

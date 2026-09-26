@@ -1,8 +1,8 @@
 diff --git a/src/components/app/AppShell.svelte b/src/components/app/AppShell.svelte
-index f00cafc..f6094fb 100644
+index 10d4472..7b513b8 100644
 --- a/src/components/app/AppShell.svelte
 +++ b/src/components/app/AppShell.svelte
-@@ -50,7 +50,7 @@
+@@ -65,7 +65,7 @@
  	const session = useSession();
  
  	$effect(() => {
@@ -11,13 +11,13 @@ index f00cafc..f6094fb 100644
  		const root = document.documentElement;
  		root.style.setProperty('--app-top', APP_TOP);
  		return () => root.style.removeProperty('--app-top');
-@@ -188,12 +188,8 @@
- 	</a>
+@@ -294,12 +294,8 @@
+ 	</Tooltip.Root>
  {/snippet}
  
 -<NavProgress {busy} />
  
- <div class="flex min-h-dvh flex-col">
+ <div class="flex min-h-dvh flex-col {dragging ? 'cursor-col-resize select-none' : ''}">
 -	{#if session.isDemo}
 -		<DemoBanner />
 -	{/if}

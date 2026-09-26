@@ -20,22 +20,39 @@ export type Script = {
 	keys: number[];
 	/** The "+$850" chip: when it leaves, where from, and where it lands (screen px). */
 	chip: { f: number; from: [number, number]; to: [number, number] };
-	rtaGlow: { f: number; b: Box }[];
+	rtaGlow: { f: number; b: Box; color: string }[];
 	notes: Note[];
 	availRing: { f: number; b: Box };
 	chart: { f: number; b: Box };
 	/** Cursor visibility (desktop). */
 	cursorOn: [number, number][];
+	/** Desktop only: the frame the dragged sidebar snaps to the icon rail. */
+	snap?: number;
 };
+
+/** The Ready to Assign card's own colours: amber while money waits, green at zero. */
+/** Phone budget: the sticky header ends here and the bottom bar starts here (CSS px). */
+const PHONE_BARS = { top: 101, bottom: 789 };
+const AMBER = '#f59e0b';
+const GREEN = '#10b981';
 
 const A = T.add;
 const B = T.assign;
 const R = T.reports;
 const E = T.pers;
+const D = T.resp;
 
 /** Resize beat, relative to T.resp. */
 export const RS = {
-	landscape: { shrink: [24, 220], morph: [232, 272], swap: [236, 262], end: 290, resize: [16, 226] },
+	// Landscape first drags the sidebar down to its icon rail (sidebar), then shrinks the window.
+	landscape: {
+		sidebar: [48, 102],
+		shrink: [132, 272],
+		morph: [282, 316],
+		swap: [286, 310],
+		end: 330,
+		resize: [124, 278]
+	},
 	portrait: { morph: [10, 48], grow: [60, 250], swap: [6, 26], end: 290, resize: [56, 256] }
 } as const;
 
@@ -52,6 +69,45 @@ function accentEntries(prefix: string, origin: [number, number]): Entry[] {
 	return list;
 }
 
+/** Rail when dragged past halfway to it; otherwise never narrower than 208 px. */
+const RAIL_SNAP = (64 + 208) / 2;
+
+/**
+ * The sidebar drag, sampled every two frames along the cursor's eased path: each frame shows the
+ * capture whose sidebar width is closest to where the edge is.
+ */
+function sidebarDrag(from: number, to: number): { entries: Entry[]; path: PathKey[]; snap: number } {
+	const [x0, x1] = [META.sidebar.handle.x + META.sidebar.handle.w / 2, 120];
+	const shots: [number, string][] = [[256, 'sb-hover'], ...META.sidebar.drags.filter((x) => x >= 208).map((x) => [x, `sb-${x}`] as [number, string])];
+	const entries: Entry[] = [];
+	let last = '';
+	let snap = to;
+	for (let f = from; f <= to; f += 2) {
+		const t = (f - from) / (to - from);
+		const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+		const x = x0 + (x1 - x0) * e;
+		let src: string;
+		if (x < RAIL_SNAP) src = 'sb-rail-drag';
+		else {
+			const w = Math.max(208, x);
+			src = shots.reduce((a, b) => (Math.abs(b[0] - w) < Math.abs(a[0] - w) ? b : a))[1];
+		}
+		if (src !== last) {
+			if (src === 'sb-rail-drag') snap = f;
+			entries.push({ f, src });
+			last = src;
+		}
+	}
+	return {
+		entries,
+		path: [
+			[from, x0, 450],
+			[to, x1, 450]
+		],
+		snap
+	};
+}
+
 const typing = (f: number, prefix: string, n: number, step: number): Entry[] =>
 	Array.from({ length: n }, (_, i) => ({ f: f + i * step, src: `${prefix}-${i + 1}` }));
 const times = (f: number, n: number, step: number) => Array.from({ length: n }, (_, i) => f + i * step);
@@ -62,6 +118,7 @@ function desktop(): Script {
 	const dlgC: [number, number] = [dlg.x + dlg.w / 2, dlg.y + dlg.h / 2];
 	const rta = box('d16-rta-850', 'rta');
 	const rtaC = center('d16-rta-850', 'rtaAmount');
+	const rtaAmt = box('d16-rta-850', 'rtaAmount');
 	const vac = center('d17-hover-vac', 'vacAssigned');
 	const chart = box('d23-networth', 'chart');
 	const chartC: [number, number] = [chart.x + chart.w / 2, chart.y + chart.h / 2];
@@ -69,6 +126,7 @@ function desktop(): Script {
 	const save = center('d14-cat-set', 'save');
 	const rtaFocus: [number, number] = [700, rtaC[1] + 110];
 	const maxScroll = META['d22-reports-full'].h - 900;
+	const drag = sidebarDrag(D + RS.landscape.sidebar[0], D + RS.landscape.sidebar[1]);
 	const reportsSticky = {
 		src: 'd22-reports',
 		boxes: [
@@ -103,6 +161,10 @@ function desktop(): Script {
 		{ f: R + 40, src: 'd21-hover-reports', fx: 'fade', dur: 5 },
 		{ f: R + 54, src: 'd22-reports-full', fx: 'cards', sticky: reportsSticky },
 		{ f: R + 298, src: 'd23-networth', fx: 'fade', dur: 14 },
+		{ f: D, src: 'sb-start', fx: 'fade', dur: 14 },
+		{ f: D + 38, src: 'sb-hover', fx: 'fade', dur: 4 },
+		...drag.entries.slice(1),
+		{ f: D + RS.landscape.sidebar[1] + 8, src: 'sb-rail', fx: 'fade', dur: 8 },
 		...accentEntries('pacc-reports', [372, 18])
 	];
 	const cam: CamKey[] = [
@@ -150,7 +212,12 @@ function desktop(): Script {
 		[R + 250, 1300, 830],
 		[R + 286, ...nw],
 		[R + 306, ...nw],
-		[R + 344, 1360, 860]
+		[R + 344, 1360, 860],
+		[D + 4, 1000, 640],
+		[D + 40, ...drag.path[0].slice(1) as [number, number]],
+		...drag.path,
+		[D + RS.landscape.sidebar[1] + 12, 120, 450],
+		[D + RS.landscape.sidebar[1] + 30, 520, 620]
 	];
 	return {
 		vw: 1440,
@@ -164,17 +231,29 @@ function desktop(): Script {
 		],
 		cam,
 		path,
-		clicks: [A + 50, A + 128, A + 194, A + 232, A + 260, A + 326, A + 392, A + 432, B + 74, R + 52, R + 296],
+		clicks: [
+			A + 50,
+			A + 128,
+			A + 194,
+			A + 232,
+			A + 260,
+			A + 326,
+			A + 392,
+			A + 432,
+			B + 74,
+			R + 52,
+			R + 296,
+			D + RS.landscape.sidebar[0] - 2
+		],
 		taps: [],
 		keys: [...times(A + 142, 4, 8), ...times(A + 272, 3, 9), ...times(A + 338, 5, 7), ...times(B + 92, 4, 9), B + 140],
 		chip: { f: A + 440, from: save, to: [rtaC[0] + 40, rtaC[1]] },
 		rtaGlow: [
-			{ f: A + 476, b: rta },
-			{ f: B + 212, b: box('d20-assigned', 'rta') }
+			{ f: A + 476, b: rta, color: AMBER },
+			{ f: B + 212, b: box('d20-assigned', 'rta'), color: GREEN }
 		],
 		notes: [
-			{ f: A + 492, out: B + 30, at: [rta.x + 250, rta.y + rta.h / 2 + 8], text: 'Income lands in Ready to Assign', tone: 'teal' },
-			{ f: B + 218, out: R + 20, at: [rta.x + 250, rta.y + rta.h / 2 + 8], text: 'Every dollar has a job', tone: 'green' }
+			{ f: A + 492, out: B + 30, at: [rtaAmt.x + 124, rtaAmt.y + rtaAmt.h / 2], text: 'Income lands in Ready to Assign', tone: 'teal' }
 		],
 		availRing: { f: B + 150, b: box('d20-assigned', 'vacAvail') },
 		chart: { f: R + 318, b: chart },
@@ -182,8 +261,13 @@ function desktop(): Script {
 			[A - 12, 0],
 			[A, 1],
 			[R + 380, 1],
-			[R + 400, 0]
-		]
+			[R + 400, 0],
+			[D + 4, 0],
+			[D + 16, 1],
+			[D + RS.landscape.sidebar[1] + 24, 1],
+			[D + RS.landscape.sidebar[1] + 36, 0]
+		],
+		snap: drag.snap
 	};
 }
 
@@ -193,6 +277,7 @@ function phone(): Script {
 	const sheetC: [number, number] = [195, sheet.y + sheet.h / 2 - 40];
 	const rta = box('p06b-rta-top', 'rta');
 	const rtaC: [number, number] = [rta.x + rta.w / 2, rta.y + rta.h / 2];
+	const rtaAmt = box('p06b-rta-top', 'rtaAmount');
 	const catSheet = box('p08-cat-sheet', 'sheet');
 	const input = center('p08-cat-sheet', 'input');
 	const chart = box('p13-networth', 'chart');
@@ -209,11 +294,11 @@ function phone(): Script {
 		{ f: A + 256, src: 'p05-cat', fx: 'fade', dur: 8 },
 		{ f: A + 304, src: 'p01-base', fx: 'fade', dur: 14 },
 		{ f: A + 354, src: 'p06b-rta-top', fx: 'fade', dur: 14 },
-		{ f: B + 40, src: 'p07-scrolled', fx: 'scroll', dur: 20 },
+		{ f: B + 40, src: 'p07-scrolled', fx: 'scroll', dur: 20, fixed: PHONE_BARS },
 		{ f: B + 80, src: 'p08-cat-sheet', fx: 'sheet', dur: 22, sheet: catSheet },
 		...typing(B + 124, 'p09-vac', 4, 9),
 		{ f: B + 182, src: 'p10-assigned', fx: 'fade', dur: 12 },
-		{ f: B + 214, src: 'p11-top', fx: 'scroll', dur: 20 },
+		{ f: B + 214, src: 'p11-top', fx: 'scroll', dur: 20, fixed: PHONE_BARS },
 		{
 			f: R + 46,
 			src: 'p12-reports-full',
@@ -281,12 +366,11 @@ function phone(): Script {
 		keys: [...times(A + 184, 3, 9), ...times(B + 124, 4, 9)],
 		chip: { f: A + 320, from: save, to: [rtaC[0] - 40, rtaC[1] + 10] },
 		rtaGlow: [
-			{ f: A + 356, b: rta },
-			{ f: B + 262, b: box('p11-top', 'rta') }
+			{ f: A + 356, b: rta, color: AMBER },
+			{ f: B + 262, b: box('p11-top', 'rta'), color: GREEN }
 		],
 		notes: [
-			{ f: A + 372, out: B + 30, at: [rta.x + 136, rta.y + rta.h / 2 + 6], text: 'Income lands here', tone: 'teal' },
-			{ f: B + 268, out: R + 20, at: [rta.x + 136, rta.y + rta.h / 2 + 6], text: 'Every dollar has a job', tone: 'green' }
+			{ f: A + 372, out: B + 30, at: [rtaAmt.x + 118, rtaAmt.y + rtaAmt.h / 2], text: 'Income lands here', tone: 'teal' }
 		],
 		availRing: {
 			f: B + 186,
