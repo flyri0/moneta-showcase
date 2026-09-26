@@ -1,6 +1,6 @@
 # Moneta showcase
 
-A 48-second promo video for [Moneta](https://github.com/flyri0/moneta), in two cuts:
+A 50-second promo video for [Moneta](https://github.com/flyri0/moneta), in two cuts:
 
 - `video/out/moneta-16x9.mp4`: 1920×1080, 60 fps
 - `video/out/moneta-9x16.mp4`: 1080×1920, 60 fps

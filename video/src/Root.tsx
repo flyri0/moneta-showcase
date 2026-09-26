@@ -2,7 +2,7 @@ import React from 'react';
 import { AbsoluteFill, Composition, Sequence, useCurrentFrame } from 'remotion';
 import { z } from 'zod';
 import { prog } from './lib/anim';
-import { DURATION, FPS, T } from './lib/theme';
+import { DURATION, FPS, INTRO_HOLD, T } from './lib/theme';
 import { Intro, Outro, Privacy } from './scenes/Bookends';
 import { Stage, STAGE_FROM } from './scenes/Stage';
 import { Soundtrack, TRACKS, type TrackId } from './Soundtrack';
@@ -26,7 +26,7 @@ const Showcase: React.FC<z.infer<typeof schema>> = ({ track, offset }) => (
 		<Sequence from={STAGE_FROM} durationInFrames={T.priv + 40 - STAGE_FROM}>
 			<Stage />
 		</Sequence>
-		<Sequence from={0} durationInFrames={172}>
+		<Sequence from={0} durationInFrames={172 + INTRO_HOLD}>
 			<Intro />
 		</Sequence>
 		<Sequence from={T.priv} durationInFrames={T.outro - T.priv + 24}>

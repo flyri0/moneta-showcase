@@ -6,11 +6,11 @@ import { Cursor, Taps } from '../components/Pointer';
 import { Pic, Shots } from '../components/Shots';
 import { Caption, Words } from '../components/Type';
 import { inOut, kf, META, out, prog } from '../lib/anim';
-import { ACCENT_HEX, ACCENTS, C, FONT, T } from '../lib/theme';
+import { ACCENT_HEX, ACCENTS, C, FONT, INTRO_HOLD, T } from '../lib/theme';
 import { CYCLE, DESKTOP, PHONE, PS, RS, type CamKey, type Note, type Script } from './scripts';
 
 /** The stage mounts under the intro so its iris opens onto it. */
-export const STAGE_FROM = 110;
+export const STAGE_FROM = 110 + INTRO_HOLD;
 const D = T.resp;
 const E = T.pers;
 const WIDTHS: number[] = META.responsive.widths;
@@ -65,7 +65,7 @@ export const Stage: React.FC = () => {
 	const inResp = g >= D && g < D + rs.end;
 	const afterResp = g >= D;
 
-	const fly = prog(g, 300, 386, out);
+	const fly = prog(g, T.head + 150, T.head + 236, out);
 	let scale: number;
 	let cx: number;
 	let cy: number;
@@ -171,13 +171,13 @@ export const Stage: React.FC = () => {
 	);
 
 	const dark = g >= E + PS.dark;
-	const headlineOut = prog(g, 300, 330, inOut);
+	const headlineOut = prog(g, T.head + 150, T.head + 180, inOut);
 
 	return (
 		<AbsoluteFill>
 			<Backdrop frame={g} />
 			{/* Headline */}
-			{g < 340 && (
+			{g < T.head + 190 && (
 				<AbsoluteFill
 					style={{
 						alignItems: 'center',
@@ -189,7 +189,7 @@ export const Stage: React.FC = () => {
 					<Words
 						text="Give every dollar a job."
 						frame={g}
-						start={156}
+						start={T.head + 6}
 						stagger={6}
 						size={portrait ? 128 : 150}
 						align="center"

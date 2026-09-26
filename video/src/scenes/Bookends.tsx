@@ -11,7 +11,7 @@ import {
 import { Backdrop } from '../components/Device';
 import { Logo, Words } from '../components/Type';
 import { inOut, out, prog } from '../lib/anim';
-import { C, FONT } from '../lib/theme';
+import { C, FONT, INTRO_HOLD } from '../lib/theme';
 
 const Wordmark: React.FC<{ size: number; reveal: number; color?: string }> = ({ size, reveal, color = '#fff' }) => (
 	<div style={{ overflow: 'hidden', paddingRight: 8 }}>
@@ -41,8 +41,10 @@ export const Intro: React.FC = () => {
 	const draw = prog(frame, 8, 62, inOut);
 	const slide = prog(frame, 52, 88, out);
 	const word = prog(frame, 60, 96, out);
-	const iris = prog(frame, 128, 166, inOut);
-	const exit = prog(frame, 118, 142, inOut);
+	const iris = prog(frame, 128 + INTRO_HOLD, 166 + INTRO_HOLD, inOut);
+	const exit = prog(frame, 118 + INTRO_HOLD, 142 + INTRO_HOLD, inOut);
+	// A slow push while the tagline holds, so the frame never sits still.
+	const drift = 1 + prog(frame, 60, 142 + INTRO_HOLD) * 0.05;
 	const r = iris * Math.hypot(width, height) * 0.62;
 	const wordSize = portrait ? 118 : 150;
 	const shift = slide * (portrait ? 230 : 290);
@@ -59,7 +61,7 @@ export const Intro: React.FC = () => {
 					alignItems: 'center',
 					justifyContent: 'center',
 					opacity: 1 - exit,
-					transform: `scale(${1 + exit * 0.12})`,
+					transform: `scale(${drift + exit * 0.12})`,
 					filter: `blur(${exit * 8}px)`
 				}}
 			>
@@ -100,12 +102,12 @@ export const Intro: React.FC = () => {
 							frame={frame}
 							start={86}
 							stagger={3}
-							size={portrait ? 40 : 38}
-							weight={480}
+							size={portrait ? 48 : 46}
+							weight={500}
 							tracking={-0.015}
-							color={C.mutedDark}
+							color="#c4d3cf"
 							align="center"
-							maxWidth={portrait ? 760 : 1200}
+							maxWidth={portrait ? 560 : 1200}
 						/>
 					</div>
 				</div>

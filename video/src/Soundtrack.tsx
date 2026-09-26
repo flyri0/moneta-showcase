@@ -1,7 +1,7 @@
 import React from 'react';
 import { Audio, interpolate, Sequence, staticFile, useVideoConfig } from 'remotion';
 import { kf } from './lib/anim';
-import { T } from './lib/theme';
+import { INTRO_HOLD, T } from './lib/theme';
 import { CYCLE, DESKTOP, PHONE, PS, RS } from './scenes/scripts';
 
 /**
@@ -63,9 +63,9 @@ export const Soundtrack: React.FC<{ track: TrackId; offset?: number }> = ({ trac
 			{/* intro */}
 			<Sfx at={4} src="pop" volume={0.2} />
 			<Sfx at={50} src="whoosh" volume={0.45} />
-			<Sfx at={108} src="riser" volume={0.3} />
-			<Sfx at={140} src="whip" volume={0.4} />
-			<Sfx at={298} src="whoosh" volume={0.5} />
+			<Sfx at={108 + INTRO_HOLD} src="riser" volume={0.3} />
+			<Sfx at={140 + INTRO_HOLD} src="whip" volume={0.4} />
+			<Sfx at={T.head + 148} src="whoosh" volume={0.5} />
 			{/* the app */}
 			{s.clicks.map((f) => (
 				<Sfx key={`c${f}`} at={f - 1} src="mouse-click" volume={0.55} />

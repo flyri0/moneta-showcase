@@ -4,20 +4,22 @@ import { staticFile } from 'remotion';
 export const FPS = 60;
 /** 120 bpm: one beat is 30 frames, one bar 120. */
 export const BEAT = 30;
-export const DURATION = 2880;
+/** How long the opening lockup and tagline stay up before the iris opens (one bar). */
+export const INTRO_HOLD = 120;
+export const DURATION = 2880 + INTRO_HOLD;
 
 /** Global frame where each part of the story starts. */
 export const T = {
 	intro: 0,
-	head: 150,
-	add: 390,
-	assign: 930,
-	reports: 1260,
-	resp: 1680,
-	pers: 2040,
-	priv: 2340,
-	outro: 2610,
-	end: 2880
+	head: 150 + INTRO_HOLD,
+	add: 390 + INTRO_HOLD,
+	assign: 930 + INTRO_HOLD,
+	reports: 1260 + INTRO_HOLD,
+	resp: 1680 + INTRO_HOLD,
+	pers: 2040 + INTRO_HOLD,
+	priv: 2340 + INTRO_HOLD,
+	outro: 2610 + INTRO_HOLD,
+	end: 2880 + INTRO_HOLD
 } as const;
 
 export const C = {
