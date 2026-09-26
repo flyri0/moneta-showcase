@@ -1,0 +1,65 @@
+diff --git a/src/components/app/AppShell.svelte b/src/components/app/AppShell.svelte
+index f00cafc..f6094fb 100644
+--- a/src/components/app/AppShell.svelte
++++ b/src/components/app/AppShell.svelte
+@@ -50,7 +50,7 @@
+ 	const session = useSession();
+ 
+ 	$effect(() => {
+-		if (!session.isDemo) return;
++		return;
+ 		const root = document.documentElement;
+ 		root.style.setProperty('--app-top', APP_TOP);
+ 		return () => root.style.removeProperty('--app-top');
+@@ -188,12 +188,8 @@
+ 	</a>
+ {/snippet}
+ 
+-<NavProgress {busy} />
+ 
+ <div class="flex min-h-dvh flex-col">
+-	{#if session.isDemo}
+-		<DemoBanner />
+-	{/if}
+ 
+ 	<div class="flex min-h-0 flex-1">
+ 		<aside
+diff --git a/src/features/demo/dataset.ts b/src/features/demo/dataset.ts
+index 3b8ed78..09624e2 100644
+--- a/src/features/demo/dataset.ts
++++ b/src/features/demo/dataset.ts
+@@ -513,6 +513,21 @@ export function buildDemo(input: DemoInput): DemoSeed {
+ 		const assigned = new Map<Budgeted, number>(
+ 			BUDGETED.map((c) => [c, Math.max(0, spent.get(c)! - available.get(c)!)])
+ 		);
++		// Video: this month has round plans with room left, and Dining Out runs over.
++		if (month === current) {
++			const plan: Partial<Record<Budgeted, number>> = {
++				groceries: 700,
++				transport: 180,
++				dining: 60,
++				household: 120,
++				entertainment: 80,
++				hobbies: 100,
++				utilities: 140,
++				phone: 90,
++				insurance: 150
++			};
++			for (const [c, a] of Object.entries(plan) as [Budgeted, number][]) assigned.set(c, money(a));
++		}
+ 		const income = earnings
+ 			.filter((e) => within(month, e.day))
+ 			.reduce((sum, e) => sum + e.amount, 0);
+diff --git a/src/routes/layout.css b/src/routes/layout.css
+index 9012dac..ebaa40b 100644
+--- a/src/routes/layout.css
++++ b/src/routes/layout.css
+@@ -391,3 +391,8 @@
+ 		transform: translateX(250%);
+ 	}
+ }
++
++/* Video capture: no scrollbars, no toasts. */
++html { scrollbar-width: none; }
++::-webkit-scrollbar { display: none; }
++[data-sonner-toaster] { display: none !important; }
