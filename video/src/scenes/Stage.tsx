@@ -116,7 +116,7 @@ export const Stage: React.FC = () => {
 			const a = prog(g, D + RS.portrait.swap[0], D + RS.portrait.swap[1]);
 			content = (
 				<>
-					<Pic src="p13-networth" />
+					<Pic src="p11-top" />
 					<div style={{ position: 'absolute', inset: 0, opacity: a, background: '#fff' }}>
 						<Pic src={rsSrc} />
 					</div>
@@ -154,6 +154,7 @@ export const Stage: React.FC = () => {
 				<Glow key={i} g={g} f={r.f} b={r.b} color={r.color} />
 			))}
 			<Glow g={g} f={s.availRing.f} b={s.availRing.b} radius={999} len={portrait ? 30 : 70} />
+			<Glow g={g} f={s.fieldGlow.f} b={s.fieldGlow.b} radius={8} len={portrait ? 50 : 76} />
 			{s.notes.map((n, i) => (
 				<Badge key={i} g={g} note={n} portrait={portrait} />
 			))}

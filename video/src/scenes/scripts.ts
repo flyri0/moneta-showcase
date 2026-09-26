@@ -22,6 +22,8 @@ export type Script = {
 	chip: { f: number; from: [number, number]; to: [number, number] };
 	rtaGlow: { f: number; b: Box; color: string }[];
 	notes: Note[];
+	/** The category field lighting up when the payee fills it. */
+	fieldGlow: { f: number; b: Box };
 	availRing: { f: number; b: Box };
 	chart: { f: number; b: Box };
 	/** Cursor visibility (desktop). */
@@ -30,9 +32,9 @@ export type Script = {
 	snap?: number;
 };
 
-/** The Ready to Assign card's own colours: amber while money waits, green at zero. */
 /** Phone budget: the sticky header ends here and the bottom bar starts here (CSS px). */
 const PHONE_BARS = { top: 101, bottom: 789 };
+/** The Ready to Assign card's own colours: amber while money waits, green at zero. */
 const AMBER = '#f59e0b';
 const GREEN = '#10b981';
 
@@ -123,7 +125,12 @@ function desktop(): Script {
 	const chart = box('d23-networth', 'chart');
 	const chartC: [number, number] = [chart.x + chart.w / 2, chart.y + chart.h / 2];
 	const nw = center('d22-reports', 'netWorth');
+	// The sidebar's links are 36 px apart; Budget is three above Reports.
+	const reportsLink = box('d20-assigned', 'reports');
+	const budgetLink: [number, number] = [reportsLink.x + 70, reportsLink.y - 108 + reportsLink.h / 2];
 	const save = center('d14-cat-set', 'save');
+	const cat = box('d07-payee-set', 'category');
+	const SAVE = A + 380;
 	const rtaFocus: [number, number] = [700, rtaC[1] + 110];
 	const maxScroll = META['d22-reports-full'].h - 900;
 	const drag = sidebarDrag(D + RS.landscape.sidebar[0], D + RS.landscape.sidebar[1]);
@@ -138,22 +145,19 @@ function desktop(): Script {
 		{ f: T.head, src: 'd01-base' },
 		{ f: A + 36, src: 'd02-hover-add', fx: 'fade', dur: 5 },
 		{ f: A + 52, src: 'd03-dialog', fx: 'fade', dur: 12 },
-		{ f: A + 130, src: 'd04-payee-open', fx: 'fade', dur: 6 },
-		...typing(A + 142, 'd05-payee', 4, 8),
-		{ f: A + 184, src: 'd06-payee-hover', fx: 'fade', dur: 4 },
-		{ f: A + 196, src: 'd07-payee-set', fx: 'fade', dur: 6 },
-		{ f: A + 234, src: 'd08-inflow', fx: 'fade', dur: 5 },
-		{ f: A + 262, src: 'd09-amount-focus', fx: 'fade', dur: 4 },
-		...typing(A + 272, 'd10-amount', 3, 9),
-		{ f: A + 328, src: 'd11-cat-open', fx: 'fade', dur: 6 },
-		...typing(A + 338, 'd12-cat', 5, 7),
-		{ f: A + 382, src: 'd13-cat-hover', fx: 'fade', dur: 4 },
-		{ f: A + 394, src: 'd14-cat-set', fx: 'fade', dur: 6 },
-		{ f: A + 420, src: 'd15-hover-save', fx: 'fade', dur: 4 },
+		{ f: A + 118, src: 'd04-payee-open', fx: 'fade', dur: 6 },
+		...typing(A + 132, 'd05-payee', 4, 9),
+		{ f: A + 182, src: 'd06-payee-hover', fx: 'fade', dur: 4 },
+		// The payee brings its default category along: no category step.
+		{ f: A + 194, src: 'd07-payee-set', fx: 'fade', dur: 6 },
+		{ f: A + 252, src: 'd08-inflow', fx: 'fade', dur: 5 },
+		{ f: A + 284, src: 'd09-amount-focus', fx: 'fade', dur: 4 },
+		...typing(A + 296, 'd10-amount', 3, 10),
+		{ f: A + 364, src: 'd15-hover-save', fx: 'fade', dur: 4 },
 		// Saved: the dialog closes on a budget that still has nothing to assign…
-		{ f: A + 434, src: 'd01-base', fx: 'fade', dur: 12 },
+		{ f: SAVE + 2, src: 'd01-base', fx: 'fade', dur: 12 },
 		// …until the income lands in Ready to Assign.
-		{ f: A + 474, src: 'd16-rta-850', fx: 'fade', dur: 14 },
+		{ f: SAVE + 50, src: 'd16-rta-850', fx: 'fade', dur: 14 },
 		{ f: B + 60, src: 'd17-hover-vac', fx: 'fade', dur: 5 },
 		{ f: B + 76, src: 'd18-vac-edit', fx: 'fade', dur: 5 },
 		...typing(B + 92, 'd19-vac', 4, 9),
@@ -161,7 +165,8 @@ function desktop(): Script {
 		{ f: R + 40, src: 'd21-hover-reports', fx: 'fade', dur: 5 },
 		{ f: R + 54, src: 'd22-reports-full', fx: 'cards', sticky: reportsSticky },
 		{ f: R + 298, src: 'd23-networth', fx: 'fade', dur: 14 },
-		{ f: D, src: 'sb-start', fx: 'fade', dur: 14 },
+		// Back to the budget from the sidebar before resizing anything.
+		{ f: R + 416, src: 'sb-start', fx: 'fade', dur: 10 },
 		{ f: D + 38, src: 'sb-hover', fx: 'fade', dur: 4 },
 		...drag.entries.slice(1),
 		{ f: D + RS.landscape.sidebar[1] + 8, src: 'sb-rail', fx: 'fade', dur: 8 },
@@ -171,8 +176,8 @@ function desktop(): Script {
 		[T.head, 1, 720, 450],
 		[A + 60, 1, 720, 450],
 		[A + 96, 1.5, dlgC[0], dlgC[1]],
-		[A + 436, 1.5, dlgC[0], dlgC[1]],
-		[A + 470, 1.75, ...rtaFocus],
+		[SAVE + 4, 1.5, dlgC[0], dlgC[1]],
+		[SAVE + 40, 1.75, ...rtaFocus],
 		[B + 30, 1.75, ...rtaFocus],
 		[B + 70, 1.42, 848, vac[1] - 40],
 		[B + 170, 1.42, 848, vac[1] - 40],
@@ -181,26 +186,22 @@ function desktop(): Script {
 		[R + 30, 1, 720, 450],
 		[R + 300, 1, 720, 450],
 		[R + 336, 1.32, chartC[0], chartC[1] - 20],
-		[R + 390, 1.32, chartC[0], chartC[1] - 20],
-		[R + 414, 1, 720, 450]
+		[R + 376, 1.32, chartC[0], chartC[1] - 20],
+		[R + 398, 1, 720, 450]
 	];
 	const path: PathKey[] = [
 		[A - 10, 1150, 820],
 		[A + 40, ...center('d01-base', 'add')],
-		[A + 70, ...center('d01-base', 'add')],
-		[A + 124, ...center('d03-dialog', 'payee')],
-		[A + 168, ...center('d03-dialog', 'payee')],
-		[A + 186, ...center('d06-payee-hover', 'item')],
-		[A + 198, ...center('d06-payee-hover', 'item')],
-		[A + 226, ...center('d07-payee-set', 'inflow')],
-		[A + 238, ...center('d07-payee-set', 'inflow')],
-		[A + 256, ...center('d07-payee-set', 'amount')],
-		[A + 300, ...center('d07-payee-set', 'amount')],
-		[A + 322, ...center('d07-payee-set', 'category')],
-		[A + 366, ...center('d07-payee-set', 'category')],
-		[A + 384, ...center('d13-cat-hover', 'item')],
-		[A + 402, ...center('d13-cat-hover', 'item')],
-		[A + 424, ...save],
+		[A + 54, ...center('d01-base', 'add')],
+		[A + 106, ...center('d03-dialog', 'payee')],
+		[A + 164, ...center('d03-dialog', 'payee')],
+		[A + 182, ...center('d06-payee-hover', 'item')],
+		[A + 196, ...center('d06-payee-hover', 'item')],
+		[A + 244, ...center('d07-payee-set', 'inflow')],
+		[A + 254, ...center('d07-payee-set', 'inflow')],
+		[A + 276, ...center('d07-payee-set', 'amount')],
+		[A + 326, ...center('d07-payee-set', 'amount')],
+		[A + 362, ...save],
 		[B + 20, ...save],
 		[B + 64, ...vac],
 		[B + 150, ...vac],
@@ -213,7 +214,9 @@ function desktop(): Script {
 		[R + 286, ...nw],
 		[R + 306, ...nw],
 		[R + 344, 1360, 860],
-		[D + 4, 1000, 640],
+		[R + 392, 1360, 860],
+		[R + 412, ...budgetLink],
+		[R + 420, ...budgetLink],
 		[D + 40, ...drag.path[0].slice(1) as [number, number]],
 		...drag.path,
 		[D + RS.landscape.sidebar[1] + 12, 120, 450],
@@ -233,37 +236,34 @@ function desktop(): Script {
 		path,
 		clicks: [
 			A + 50,
-			A + 128,
-			A + 194,
-			A + 232,
-			A + 260,
-			A + 326,
-			A + 392,
-			A + 432,
+			A + 116,
+			A + 192,
+			A + 250,
+			A + 282,
+			SAVE,
 			B + 74,
 			R + 52,
 			R + 296,
+			R + 414,
 			D + RS.landscape.sidebar[0] - 2
 		],
 		taps: [],
-		keys: [...times(A + 142, 4, 8), ...times(A + 272, 3, 9), ...times(A + 338, 5, 7), ...times(B + 92, 4, 9), B + 140],
-		chip: { f: A + 440, from: save, to: [rtaC[0] + 40, rtaC[1]] },
+		keys: [...times(A + 132, 4, 9), ...times(A + 296, 3, 10), ...times(B + 92, 4, 9), B + 140],
+		chip: { f: SAVE + 16, from: save, to: [rtaC[0] + 40, rtaC[1]] },
 		rtaGlow: [
-			{ f: A + 476, b: rta, color: AMBER },
+			{ f: SAVE + 52, b: rta, color: AMBER },
 			{ f: B + 212, b: box('d20-assigned', 'rta'), color: GREEN }
 		],
 		notes: [
-			{ f: A + 492, out: B + 30, at: [rtaAmt.x + 124, rtaAmt.y + rtaAmt.h / 2], text: 'Income lands in Ready to Assign', tone: 'teal' }
+			{ f: SAVE + 68, out: B + 30, at: [rtaAmt.x + 124, rtaAmt.y + rtaAmt.h / 2], text: 'Income lands in Ready to Assign', tone: 'teal' },
+			{ f: A + 206, out: A + 264, at: [cat.x + 4, cat.y + cat.h + 24], text: "Filled from the payee's default category", tone: 'teal' }
 		],
+		fieldGlow: { f: A + 198, b: cat },
 		availRing: { f: B + 150, b: box('d20-assigned', 'vacAvail') },
 		chart: { f: R + 318, b: chart },
 		cursorOn: [
 			[A - 12, 0],
 			[A, 1],
-			[R + 380, 1],
-			[R + 400, 0],
-			[D + 4, 0],
-			[D + 16, 1],
 			[D + RS.landscape.sidebar[1] + 24, 1],
 			[D + RS.landscape.sidebar[1] + 36, 0]
 		],
@@ -283,24 +283,32 @@ function phone(): Script {
 	const chart = box('p13-networth', 'chart');
 	const chartC: [number, number] = [chart.x + chart.w / 2, chart.y + chart.h / 2];
 	const card1 = box('p12-reports-full', 'card1');
+	// The tab bar has five equal tabs; Budget is the first, three to the left of Reports.
+	const tab = box('p11-top', 'reportsTab');
+	const budgetTab: [number, number] = [tab.x - 3 * tab.w + tab.w / 2, tab.y + tab.h / 2];
 	const save = center('p02-sheet', 'save');
+	const cat = box('p03-payee', 'category');
 	const entries: Entry[] = [
 		{ f: T.head, src: 'p01-base' },
-		{ f: A + 46, src: 'p02-sheet', fx: 'sheet', dur: 22, sheet },
-		{ f: A + 108, src: 'p03-payee', fx: 'fade', dur: 8 },
-		{ f: A + 184, src: 'p04-amount-1', fx: 'fade', dur: 5 },
-		{ f: A + 193, src: 'p04-amount-2' },
-		{ f: A + 202, src: 'p04-amount-3' },
-		{ f: A + 256, src: 'p05-cat', fx: 'fade', dur: 8 },
+		{ f: A + 42, src: 'p02-sheet', fx: 'sheet', dur: 22, sheet },
+		{ f: A + 98, src: 'p02b-payee-open', fx: 'fade', dur: 6 },
+		...typing(A + 112, 'p02c-payee', 4, 9),
+		// The payee brings its default category along: no category step.
+		{ f: A + 160, src: 'p03-payee', fx: 'fade', dur: 6 },
+		{ f: A + 212, src: 'p03b-inflow', fx: 'fade', dur: 4 },
+		{ f: A + 232, src: 'p03c-amount-focus', fx: 'fade', dur: 4 },
+		{ f: A + 244, src: 'p04-amount-1', fx: 'fade', dur: 3 },
+		{ f: A + 253, src: 'p04-amount-2' },
+		{ f: A + 262, src: 'p04-amount-3' },
 		{ f: A + 304, src: 'p01-base', fx: 'fade', dur: 14 },
 		{ f: A + 354, src: 'p06b-rta-top', fx: 'fade', dur: 14 },
 		{ f: B + 40, src: 'p07-scrolled', fx: 'scroll', dur: 20, fixed: PHONE_BARS },
-		{ f: B + 80, src: 'p08-cat-sheet', fx: 'sheet', dur: 22, sheet: catSheet },
-		...typing(B + 124, 'p09-vac', 4, 9),
-		{ f: B + 182, src: 'p10-assigned', fx: 'fade', dur: 12 },
+		{ f: B + 76, src: 'p08-cat-sheet', fx: 'sheet', dur: 22, sheet: catSheet },
+		...typing(B + 118, 'p09-vac', 4, 9),
+		{ f: B + 178, src: 'p10-assigned', fx: 'fade', dur: 12 },
 		{ f: B + 214, src: 'p11-top', fx: 'scroll', dur: 20, fixed: PHONE_BARS },
 		{
-			f: R + 46,
+			f: R + 42,
 			src: 'p12-reports-full',
 			fx: 'cards',
 			sticky: {
@@ -312,7 +320,9 @@ function phone(): Script {
 				]
 			}
 		},
-		{ f: R + 298, src: 'p13-networth', fx: 'fade', dur: 14 },
+		{ f: R + 294, src: 'p13-networth', fx: 'fade', dur: 14 },
+		// Back to the budget from the tab bar before the phone grows into a desktop.
+		{ f: R + 406, src: 'p11-top', fx: 'fade', dur: 10 },
 		...accentEntries('acc-reports', [1380, 30])
 	];
 	const cam: CamKey[] = [
@@ -334,8 +344,8 @@ function phone(): Script {
 		[R + 20, 1, 195, 422],
 		[R + 300, 1, 195, 422],
 		[R + 336, 1.25, 195, chartC[1]],
-		[R + 394, 1.25, 195, chartC[1]],
-		[R + 416, 1, 195, 422]
+		[R + 376, 1.25, 195, chartC[1]],
+		[R + 398, 1, 195, 422]
 	];
 	return {
 		vw: 390,
@@ -353,25 +363,28 @@ function phone(): Script {
 		taps: [
 			[A + 40, ...center('p01-base', 'fab')],
 			[A + 96, ...center('p02-sheet', 'payee')],
-			[A + 146, ...center('p02-sheet', 'inflow')],
-			[A + 170, ...center('p02-sheet', 'amount')],
-			[A + 236, ...center('p02-sheet', 'category')],
+			[A + 158, ...center('p02d-payee-item', 'item')],
+			[A + 210, ...center('p02-sheet', 'inflow')],
+			[A + 230, ...center('p02-sheet', 'amount')],
 			[A + 300, ...save],
 			[B + 74, ...center('p07-scrolled', 'vacName')],
 			[B + 110, ...input],
 			[B + 176, ...center('p08-cat-sheet', 'save')],
 			[R + 40, ...center('p11-top', 'reportsTab')],
-			[R + 292, card1.x + card1.w / 2, card1.y + 150]
+			[R + 292, card1.x + card1.w / 2, card1.y + 150],
+			[R + 404, budgetTab[0], budgetTab[1]]
 		],
-		keys: [...times(A + 184, 3, 9), ...times(B + 124, 4, 9)],
+		keys: [...times(A + 112, 4, 9), ...times(A + 244, 3, 9), ...times(B + 118, 4, 9)],
 		chip: { f: A + 320, from: save, to: [rtaC[0] - 40, rtaC[1] + 10] },
 		rtaGlow: [
 			{ f: A + 356, b: rta, color: AMBER },
 			{ f: B + 262, b: box('p11-top', 'rta'), color: GREEN }
 		],
 		notes: [
-			{ f: A + 372, out: B + 30, at: [rtaAmt.x + 118, rtaAmt.y + rtaAmt.h / 2], text: 'Income lands here', tone: 'teal' }
+			{ f: A + 372, out: B + 30, at: [rtaAmt.x + 118, rtaAmt.y + rtaAmt.h / 2], text: 'Income lands here', tone: 'teal' },
+			{ f: A + 172, out: A + 206, at: [cat.x + 2, cat.y + cat.h + 20], text: 'Filled from the payee', tone: 'teal' }
 		],
+		fieldGlow: { f: A + 164, b: cat },
 		availRing: {
 			f: B + 186,
 			b: { x: 270, w: 100, y: box('p10-assigned', 'vacRow').y + 4, h: 34 }

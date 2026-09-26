@@ -316,21 +316,29 @@ async function phone() {
 	const form = { dialog, payee: dialog.getByLabel('Payee'), inflow: dialog.getByRole('button', { name: 'Inflow' }), amount: dialog.getByLabel('Amount', { exact: true }), category: dialog.getByLabel('Category'), save: dialog.getByRole('button', { name: 'Save' }) };
 	await shot(page, 'p02-sheet', form, { settle: 700 });
 	await form.payee.tap();
-	await popover(page).locator('[data-slot="command-input"]').fill('Free');
-	await popover(page).locator('[data-slot="command-item"]').filter({ hasText: 'Freelance' }).first().tap();
+	await shot(page, 'p02b-payee-open', { ...form, pop: popover(page) }, { settle: 400 });
+	const search = popover(page).locator('[data-slot="command-input"]');
+	let typed = '';
+	for (const ch of 'Free') {
+		typed += ch;
+		await search.press(ch);
+		await shot(page, `p02c-payee-${typed.length}`, {}, { settle: 120 });
+	}
+	const item = popover(page).locator('[data-slot="command-item"]').filter({ hasText: 'Freelance' }).first();
+	await shot(page, 'p02d-payee-item', { item }, { settle: 50 });
+	await item.tap();
+	// Picking the payee fills its default category (Other Income) by itself.
 	await shot(page, 'p03-payee', form, { settle: 400 });
 	await form.inflow.tap();
+	await shot(page, 'p03b-inflow', form, { settle: 250 });
 	await form.amount.tap();
-	let typed = '';
+	await shot(page, 'p03c-amount-focus', form, { settle: 200 });
+	typed = '';
 	for (const ch of '850') {
 		typed += ch;
 		await page.keyboard.press(ch);
 		await shot(page, `p04-amount-${typed.length}`, form, { settle: 100 });
 	}
-	await form.category.tap();
-	await popover(page).locator('[data-slot="command-input"]').fill('Other');
-	await popover(page).locator('[data-slot="command-item"]').filter({ hasText: 'Other Income' }).first().tap();
-	await shot(page, 'p05-cat', form, { settle: 400 });
 	if (!(await dialog.isVisible())) throw new Error('phone dialog closed early');
 	await form.save.tap();
 	await dialog.waitFor({ state: 'hidden' });
