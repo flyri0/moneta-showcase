@@ -297,9 +297,27 @@ async function responsive() {
 	for (const w of widths) {
 		await page.setViewportSize({ width: w, height: H });
 		await page.mouse.move(1, H - 1);
-		await shot(page, `rs-${w}`, {}, { settle: 250 });
+		const boxes = w === 1440 ? { reportsLink: page.getByRole('link', { name: 'Reports' }).first() } : {};
+		await shot(page, `rs-${w}`, boxes, { settle: 250 });
 	}
 	meta.responsive = { widths, height: H };
+
+	// Back to full width with the rail, then Reports in every accent: where the story goes next.
+	await page.setViewportSize({ width: 1440, height: H });
+	await page.getByRole('link', { name: 'Reports' }).first().click();
+	await page.getByTestId('report-cards').waitFor();
+	await page.mouse.move(1430, 890);
+	await page.waitForTimeout(1500);
+	for (const dark of [false, true]) {
+		for (const a of ACCENTS) {
+			await page.evaluate(([a, d]) => {
+				document.documentElement.dataset.theme = a;
+				document.documentElement.classList.toggle('dark', d);
+				document.documentElement.style.colorScheme = d ? 'dark' : 'light';
+			}, [a, dark]);
+			await shot(page, `racc-reports-${dark ? 'dark' : 'light'}-${a}`, {}, { settle: 250 });
+		}
+	}
 	await ctx.close();
 }
 

@@ -89,6 +89,7 @@ export const Soundtrack: React.FC<{ track: TrackId; offset?: number }> = ({ trac
 				<Sfx key={`r${f}`} at={f} src="blip" volume={0.35} rate={1.2} />
 			))}
 			<Sfx at={D + (portrait ? RS.portrait.morph[0] : RS.landscape.morph[0])} src="whoosh" volume={0.45} />
+			<Sfx at={s.openReports.f - 1} src="mouse-click" volume={0.5} rate={s.openReports.by === 'tap' ? 1.15 : 1} />
 			{/* accents and dark mode */}
 			{CYCLE.map((_, i) => (
 				<Sfx key={`a${i}`} at={E + PS.cycleStart + i * PS.step} src="blip" volume={0.28} rate={1 + i * 0.06} />

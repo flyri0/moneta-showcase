@@ -112,21 +112,20 @@ export const Stage: React.FC = () => {
 	let content: React.ReactNode;
 	if (inResp) {
 		const rsSrc = `rs-${nearestWidth(cw)}`;
+	const rsPic = <RsPic src={rsSrc} height={ch} />;
 		if (portrait) {
 			const a = prog(g, D + RS.portrait.swap[0], D + RS.portrait.swap[1]);
 			content = (
 				<>
 					<Pic src="p11-top" />
-					<div style={{ position: 'absolute', inset: 0, opacity: a, background: '#fff' }}>
-						<Pic src={rsSrc} />
-					</div>
+					<div style={{ position: 'absolute', inset: 0, opacity: a, background: '#fff' }}>{rsPic}</div>
 				</>
 			);
 		} else {
 			const a = prog(g, D + RS.landscape.swap[0], D + RS.landscape.swap[1]);
 			content = (
 				<>
-					<Pic src={rsSrc} />
+					{rsPic}
 					{a > 0 && (
 						<div style={{ position: 'absolute', inset: 0, opacity: a }}>
 							<Pic src="p11-top" />
@@ -147,6 +146,33 @@ export const Stage: React.FC = () => {
 	const cursor = !portrait && g < D + RS.landscape.sidebar[1] + 40 && (
 		<Cursor frame={g} path={s.path} clicks={s.clicks} opacity={kf(g, s.cursorOn)} resize={dragging} />
 	);
+	const o = s.openReports;
+	const openReports =
+		afterResp &&
+		(o.by === 'tap' ? (
+			<Taps frame={g} taps={[[o.f, o.at[0], o.at[1]]]} />
+		) : (
+			g > o.f - 50 &&
+			g < o.f + 50 && (
+				<Cursor
+					frame={g}
+					path={[
+						[o.f - 44, vw * 0.45, vh * 0.6],
+						[o.f - 6, o.at[0], o.at[1]],
+						[o.f + 6, o.at[0], o.at[1]],
+						[o.f + 40, o.at[0] + 260, o.at[1] + 160]
+					]}
+					clicks={[o.f]}
+					opacity={kf(g, [
+						[o.f - 46, 0],
+						[o.f - 36, 1],
+						[o.f + 26, 1],
+						[o.f + 40, 0]
+					])}
+					size={38}
+				/>
+			)
+		));
 	const overlays = !afterResp && (
 		<>
 			<Chip s={s} g={g} portrait={portrait} />
@@ -218,6 +244,7 @@ export const Stage: React.FC = () => {
 					{content}
 					{overlays}
 					{cursor}
+					{openReports}
 				</div>
 			</Device>
 			</AbsoluteFill>
@@ -258,6 +285,41 @@ export const Stage: React.FC = () => {
 				</div>
 			))}
 		</AbsoluteFill>
+	);
+};
+
+/**
+ * A resize capture on a screen shorter than it (the phone is 844 px tall, the captures 900): the
+ * bottom bar and the add button stay on the bottom edge, as they do on a real screen.
+ */
+const RsPic: React.FC<{ src: string; height: number }> = ({ src, height }) => {
+	const m = META[src];
+	const lift = m.h - height;
+	if (lift < 0.5 || m.w >= 768) return <Pic src={src} />;
+	const bar = { y: m.h - 55, h: 55 };
+	const fab = { x: m.w - 146, y: m.h - 112, w: 130, h: 44 };
+	// The base image without its own add button, which the moved copy replaces.
+	const notch = `polygon(0 0, 100% 0, 100% ${fab.y}px, ${fab.x}px ${fab.y}px, ${fab.x}px ${fab.y + fab.h}px, 100% ${fab.y + fab.h}px, 100% 100%, 0 100%)`;
+	return (
+		<>
+			<Pic src={src} style={{ clipPath: notch }} />
+			<div style={{ position: 'absolute', left: 0, top: bar.y - lift, width: m.w, height: bar.h, overflow: 'hidden' }}>
+				<Pic src={src} style={{ top: -bar.y }} />
+			</div>
+			<div
+				style={{
+					position: 'absolute',
+					left: fab.x,
+					top: fab.y - lift,
+					width: fab.w,
+					height: fab.h,
+					overflow: 'hidden',
+					borderRadius: 22
+				}}
+			>
+				<Pic src={src} style={{ left: -fab.x, top: -fab.y }} />
+			</div>
+		</>
 	);
 };
 

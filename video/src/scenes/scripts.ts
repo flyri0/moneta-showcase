@@ -30,6 +30,8 @@ export type Script = {
 	cursorOn: [number, number][];
 	/** Desktop only: the frame the dragged sidebar snaps to the icon rail. */
 	snap?: number;
+	/** After the resize: how the user opens Reports on the new device (a tap on a phone, a click on a desktop). */
+	openReports: { f: number; at: [number, number]; by: 'tap' | 'click' };
 };
 
 /** Phone budget: the sticky header ends here and the bottom bar starts here (CSS px). */
@@ -62,8 +64,9 @@ export const RS = {
 export const PS = { swatchIn: 4, cycleStart: 40, step: 14, toggle: 160, wipe: 170, dark: 186 } as const;
 export const CYCLE = ['emerald', 'amber', 'orange', 'rose', 'pink', 'blue', 'indigo', 'violet'];
 
-function accentEntries(prefix: string, origin: [number, number]): Entry[] {
-	const list: Entry[] = [{ f: E + 4, src: `${prefix}-light-teal`, fx: 'fade', dur: 16 }];
+/** Reports in every accent. `start` is when Reports opens, right after the tap or click on it. */
+function accentEntries(prefix: string, origin: [number, number], start: number): Entry[] {
+	const list: Entry[] = [{ f: start, src: `${prefix}-light-teal`, fx: 'fade', dur: 10 }];
 	CYCLE.forEach((a, i) =>
 		list.push({ f: E + PS.cycleStart + i * PS.step, src: `${prefix}-light-${a}`, fx: 'fade', dur: 5 })
 	);
@@ -170,7 +173,7 @@ function desktop(): Script {
 		{ f: D + 38, src: 'sb-hover', fx: 'fade', dur: 4 },
 		...drag.entries.slice(1),
 		{ f: D + RS.landscape.sidebar[1] + 8, src: 'sb-rail', fx: 'fade', dur: 8 },
-		...accentEntries('pacc-reports', [372, 18])
+		...accentEntries('pacc-reports', [372, 18], D + 338)
 	];
 	const cam: CamKey[] = [
 		[T.head, 1, 720, 450],
@@ -267,7 +270,9 @@ function desktop(): Script {
 			[D + RS.landscape.sidebar[1] + 24, 1],
 			[D + RS.landscape.sidebar[1] + 36, 0]
 		],
-		snap: drag.snap
+		snap: drag.snap,
+		// Now a phone: tap the Reports tab.
+		openReports: { f: D + 336, at: center('p11-top', 'reportsTab'), by: 'tap' }
 	};
 }
 
@@ -323,7 +328,7 @@ function phone(): Script {
 		{ f: R + 294, src: 'p13-networth', fx: 'fade', dur: 14 },
 		// Back to the budget from the tab bar before the phone grows into a desktop.
 		{ f: R + 406, src: 'p11-top', fx: 'fade', dur: 10 },
-		...accentEntries('acc-reports', [1380, 30])
+		...accentEntries('racc-reports', [1380, 30], D + 302)
 	];
 	const cam: CamKey[] = [
 		[T.head, 1, 195, 422],
@@ -385,6 +390,8 @@ function phone(): Script {
 			{ f: A + 172, out: A + 206, at: [cat.x + 2, cat.y + cat.h + 20], text: 'Filled from the payee', tone: 'teal' }
 		],
 		fieldGlow: { f: A + 164, b: cat },
+		// Now a desktop: click Reports in the sidebar's rail.
+		openReports: { f: D + 300, at: center('rs-1440', 'reportsLink'), by: 'click' },
 		availRing: {
 			f: B + 186,
 			b: { x: 270, w: 100, y: box('p10-assigned', 'vacRow').y + 4, h: 34 }
